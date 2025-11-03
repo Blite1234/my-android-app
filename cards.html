@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Игровые карточки - Shadow of Sargo</title>
+    <style>
+        :root {
+            --color-weapon: #8b4513;
+            --color-ammo: #8b0000;
+            --color-armor: #2f4f4f;
+            --color-tactical: #556b2f;
+            --color-environment: #483d8b;
+            --color-common: #c0c0c0;
+            --color-rare: #007fff;
+            --color-epic: #b200ed;
+            --color-legendary: #ff8c00;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #2c1810, #1a1a1a);
+            color: #f5e8c8;
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 20px;
+            background: rgba(139, 69, 19, 0.2);
+            border-radius: 10px;
+            border: 2px solid #8b4513;
+        }
+        
+        h1 {
+            color: #f5e8c8;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+            margin: 0;
+        }
+        
+        .subtitle {
+            color: #d2b48c;
+            font-style: italic;
+        }
+        
+        .filters {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+        
+        .filter-btn {
+            padding: 10px 20px;
+            background: rgba(139, 69, 19, 0.3);
+            border: 1px solid #8b4513;
+            color: #f5e8c8;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .filter-btn:hover, .filter-btn.active {
+            background: #8b4513;
+            transform: translateY(-2px);
+        }
+        
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+            padding: 20px 0;
+        }
+        
+        .card {
+            background: linear-gradient(145deg, #3a2c1a, #2a1f12);
+            border-radius: 15px;
+            padding: 20px;
+            border: 2px solid;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.6);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.8);
+        }
+        
+        .card::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, transparent, currentColor, transparent);
+        }
+        
+        .card.weapon { border-color: var(--color-weapon); color: #e9d8b6; }
+        .card.ammo { border-color: var(--color-ammo); color: #f0d0d0; }
+        .card.armor { border-color: var(--color-armor); color: #d0e0e0; }
+        .card.tactical { border-color: var(--color-tactical); color: #e0e8d0; }
+        .card.environment { border-color: var(--color-environment); color: #e0d8f0; }
+        
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .card-icon {
+            font-size: 2em;
+            margin-right: 10px;
+        }
+        
+        .card-title {
+            font-size: 1.3em;
+            font-weight: bold;
+            margin: 0;
+            flex-grow: 1;
+        }
+        
+        .card-type {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            border: 1px solid currentColor;
+        }
+        
+        .card-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+            gap: 10px;
+            margin: 15px 0;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+        }
+        
+        .stat {
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 1.4em;
+            font-weight: bold;
+            display: block;
+        }
+        
+        .stat-label {
+            font-size: 0.8em;
+            opacity: 0.8;
+        }
+        
+        .card-description {
+            margin: 15px 0;
+            line-height: 1.5;
+            font-size: 0.95em;
+        }
+        
+        .card-requirements {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.85em;
+            margin-top: 10px;
+            border-left: 3px solid currentColor;
+        }
+        
+        .card-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 15px;
+            padding-top: 10px;
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+            font-size: 0.9em;
+        }
+        
+        .card-cost {
+            background: rgba(139, 0, 0, 0.3);
+            padding: 4px 8px;
+            border-radius: 10px;
+            border: 1px solid #8b0000;
+        }
+        
+        .card-class {
+            opacity: 0.7;
+            font-style: italic;
+        }
+        
+        .rarity-common { border-color: var(--color-common); }
+        .rarity-rare { border-color: var(--color-rare); }
+        .rarity-epic { border-color: var(--color-epic); }
+        .rarity-legendary { border-color: var(--color-legendary); }
+        
+        .back-link {
+            display: inline-block;
+            margin-top: 30px;
+            padding: 10px 20px;
+            background: rgba(139, 69, 19, 0.3);
+            color: #f5e8c8;
+            text-decoration: none;
+            border-radius: 5px;
+            border: 1px solid #8b4513;
+            transition: all 0.3s ease;
+        }
+        
+        .back-link:hover {
+            background: #8b4513;
+            transform: translateX(-5px);
+        }
+        
+        @media (max-width: 768px) {
+            .cards-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .filters {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .filter-btn {
+                width: 200px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>⚔️ ИГРОВЫЕ КАРТОЧКИ</h1>
+            <div class="subtitle">Shadow of Sargo - Полная коллекция карт</div>
+        </header>
+        
+        <div class="filters">
+            <button class="filter-btn active" onclick="filterCards('all')">Все карты</button>
+            <button class="filter-btn" onclick="filterCards('weapon')">🗡️ Оружие</button>
+            <button class="filter-btn" onclick="filterCards('ammo')">💥 Патроны</button>
+            <button class="filter-btn" onclick="filterCards('armor')">🛡️ Броня</button>
+            <button class="filter-btn" onclick="filterCards('tactical')">🛠️ Тактические</button>
+            <button class="filter-btn" onclick="filterCards('environment')">🌳 Окружение</button>
+        </div>
+        
+        <div class="cards-grid">
+            <!-- Оружие -->
+            <div class="card weapon rarity-common">
+                <div class="card-header">
+                    <div class="card-icon">🔫</div>
+                    <div class="card-title">АК-74М</div>
+                    <div class="card-type">Автомат</div>
+                </div>
+                <div class="card-stats">
+                    <div class="stat">
+                        <span class="stat-value">3</span>
+                        <span class="stat-label">УРОН</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-value">4</span>
+                        <span class="stat-label">ТОЧНОСТЬ</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-value">3</span>
+                        <span class="stat-label">ДАЛЬНОСТЬ</span>
+                    </div>
+                </div>
+                <div class="card-description">
+                    Основное оружие штурмовика. Надежный и точный автомат для средних дистанций.
+                </div>
+                <div class="card-requirements">
+                    <strong>Требуется:</strong> 1 патрон 5.45x39 для атаки
+                </div>
+                <div class="card-footer">
+                    <div class="card-cost">Слот: 2</div>
+                    <div class="card-class">Штурмовик</div>
+                </div>
+            </div>
+            
+            <div class="card weapon rarity-rare">
+                <div class="card-header">
+                    <div class="card-icon">🎯</div>
+                    <div class="card-title">MK-14</div>
+                    <div class="card-type">Снайперская</div>
+                </div>
+                <div class="card-stats">
+                    <div class="stat">
+                        <span class="stat-value">5</span>
+                        <span class="stat-label">УРОН</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-value">6</span>
+                        <span class="stat-label">ТОЧНОСТЬ</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-value">5</span>
+                        <span class="stat-label">ДАЛЬНОСТЬ</span>
+                    </div>
+                </div>
+                <div class="card-description">
+                    Марксманская винтовка с оптическим прицелом. Идеальна для точечных выстрелов на большой дистанции.
+                </div>
+                <div class="card-requirements">
+                    <strong>Требуется:</strong> 1 патрон 7.62x51 для атаки
+                </div>
+                <div class="card-footer">
+                    <div class="card-cost">Слот: 3</div>
+                    <div class="card-class">Снайпер</div>
+                </div>
+            </div>
+            
+            <div class="card weapon rarity-epic">
+                <div class="card-header">
+                    <div class="card-icon">💥</div>
+                    <div class="card-title">M249</div>
+                    <div class="card-type">Пулемет</div>
+                </div>
+                <div class="card-stats">
+                    <div class="stat">
+                        <span class="stat-value">4</span>
+                        <span class="stat-label">УРОН</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-value">3</span>
+                        <span class="stat-label">ТОЧНОСТЬ</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-value">2</span>
+                        <span class="stat-label">ДАЛЬНОСТЬ</span>
+                    </div>
+                </div>
+                <div class="card-description">
+                    Ручной пулемет с высокой скорострельностью. Подавляет противника плотным огнем.
+                </div>
+                <div class="card-requirements">
+                    <strong>Требуется:</strong> 2 патрона 5.56x45 для атаки
+                </div>
+                <div class="card-footer">
+                    <div class="card-cost">Слот: 3</div>
+                    <div class="card-class">Танк</div>
+                </div>
+            </div>
+
+            <div class="card weapon rarity-common">
+                <div class="card-header">
+                    <div class="card-icon">🔫</div>
+                    <div class="card-title">Пистолет ПЛ</div>
+                    <div class="card-type">Пистолет</div>
+                </div>
+                <div class="card-stats">
+                    <div class="stat">
+                        <span class="stat-value">1</span>
+                        <span class="stat-label">УРОН</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-value">3</span>
+                        <span class="stat-label">ТОЧНОСТЬ</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-value">1</span>
+                        <span class="stat-label">ДАЛЬНОСТЬ</span>
+                    </div>
+                </div>
+                <div class="card-description">
+                    Тактический пистолет для ближнего боя. Надежное резервное оружие.
+                </div>
+                <div class="card-requirements">
+                    <strong>Требуется:</strong> 1 патрон 9x19 для атаки
+                </div>
+                <div class="card-footer">
+                    <div class="card-cost">Слот: 1</div>
+                    <div class="card-class">Все классы</div>
+                </div>
+            </div>
+            
+            <!-- Патроны -->
+            <div class="card ammo rarity-common">
+                <div class="card-header">
+                    <div class="card-icon">📦</div>
+                    <div class="card-title">Обойма 5.45x39</div>
+                    <div class="card-type">Патроны</div>
+                </div>
+                <div class="card-stats">
+                    <div class="stat">
+                        <span class="stat-value">3</span>
+                        <span class="stat-label">ПАТРОНОВ</span>
+                    </div>
+                </div>
+                <div class="card-description">
+                    Стандартные патроны для автоматов калибра 5.45мм. Надежные и доступные.
+                </div>
+                <div class="card-requirements">
+                    <strong>Совместимость:</strong> АК-74М, АК-12
+                </div>
+                <div class="card-footer">
+                    <div class="card-cost">Слот: 1</div>
+                    <div class="card-class">Все классы</div>
+                </div>
+            </div>
+            
+            <div class="card ammo rarity-rare">
+                <div class="card-header">
+                    <div class="card-icon">🎁</div>
+                    <div class="card-title">Бронебойные 7.62x51</div>
+                    <div class="card-type">Спецпатроны</div>
+                </div>
+                <div class="card-stats">
+                    <div class="stat">
+                        <span class="stat-value">2</span>
+                        <span class="stat-label">ПАТРОНОВ</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-value">+2</span>
+                        <span class="stat-label">ПРОБИТИЕ</span>
+                    </div>
+                </div>
+                <div class="card-description">
+                    Бронебойные патроны с усиленным зарядом. Игнорируют 2 единицы брони цели.
+                </div>
+                <div class="card-requirements">
+                    <strong>Совместимость:</strong> MK-14, Barrett .50cal
+                </div>
+                <div class="card-footer">
+                    <div class="card-cost">Слот: 1</div>
+                    <div class="card-class">Снайпер</div>
+                </div>
+            </div>
+
+            <div class="card ammo rarity-common">
+                <div class="card-header">
+                    <div class="card-icon">📦</div>
+                    <div class="card-title">Патроны 9x19</div>
+                    <div class="card-type">Патроны</div>
+                </div>
+                <div class="card-stats">
+                    <div class="stat">
+                        <span class="stat-value">4</span>
+                        <span class="stat-label">ПАТРОНОВ</span>
+                    </div>
+                </div>
+                <div class="card-description">
+                    Стандартные пистолетные патроны. Эффективны на коротких дистанциях.
+                </div>
+                <div class="card-requirements">
+                    <strong>Совместимость:</strong> Пистолет ПЛ, Colt
+                </div>
+                <div class="card-footer">
+                    <div class="card-cost">Слот: 1</div>
+                    <div class="card-class">Все классы</div>
+                </div>
+            </div>
+            
+            <!-- Броня -->
+            <div class="card armor rarity-common">
+                <div class="card-header">
+                    <div class="card-icon">🛡️</div>
+                    <div class="card-title">Бронежилет 4 класса</div>
+                    <div class="card-type">Защита</div>
+                </div>
+                <div class="card-stats">
+                    <div class="stat">
+                        <span class="stat-value">4</span>
+                        <span class="stat-label">ПРОЧНОСТЬ</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-value">2</span>
+                        <span class="stat-label">ЗАЩИТА</span>
+                    </div>
+                </div>
+                <div class="card-description">
+                    Стандартный армейский бронежилет. Поглощает урон до полного износа.
+                </div>
+                <div class="card-requirements">
+                    <strong>Эффект:</strong> Поглощает 2 урона от каждой атаки
+                </div>
+                <div class="card-footer">
+                    <div class="card-cost">Слот: 2</div>
+                    <div class="card-class">Все классы</div>
+                </div>
+            </div>
+            
+            <div class="card armor rarity-epic">
+                <div class="card-header">
+                    <div class="card-icon">🔰</div>
+                    <div class="card-title">Керамическая плита</div>
+                    <div class="card-type">Усиление</div>
+                </div>
+                <div class="card-stats">
+                    <div class="stat">
+                        <span class="stat-value">+3</span>
+                        <span class="stat-label">БРОНЯ</span>
+                    </div>
+                </div>
+                <div class="card-description">
+                    Дополнительная бронепластина. Можно установить поверх существующей брони.
+                </div>
+                <div class="card-requirements">
+                    <strong>Эффект:</strong> +3 к текущему запасу брони
+                </div>
+                <div class="card-footer">
+                    <div class="card-cost">Слот: 1</div>
+                    <div class="card-class">Все классы</div>
+                </div>
+            </div>
+
+            <div class="card armor rarity-rare">
+                <div class="card-header">
+                    <div class="card-icon">🛡️</div>
+                    <div class="card-title">Тактический шлем</div>
+                    <div class="card-type">Защита</div>
+                </div>
+                <div class="card-stats">
+                    <div class="stat">
+                        <span class="stat-value">2</span>
+                        <span class="stat-label">ПРОЧНОСТЬ</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-value">1</span>
+                        <span class="stat-label">ЗАЩИТА</span>
+                    </div>
+                </div>
+                <div class="card-description">
+                    Современный тактический шлем с защитой от осколков и пуль.
+                </div>
+                <div class="card-requirements">
+                    <strong>Эффект:</strong> Поглощает 1 урон от выстрелов в голову
+                </div>
+                <div class="card-footer">
+                    <div class="card-cost">Слот: 1</div>
+                    <div class="card-class">Все классы</div>
+                </div>
+            </div>
+            
+            <!-- Тактические приемы -->
+            <div class="card tactical rarity-rare">
+                <div class="card-header">
+                    <div class="card-icon">💣</div>
+                    <div class="card-title">Осколочная граната</div>
+                    <div class="card-type">Тактическая</div>
+                </div>
+                <div class="card-stats">
+                    <div class="stat">
+                        <span class="stat-value">3</span>
+                        <span class="stat-label">УРОН</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-value">Обл.</span>
+                        <span class="stat-label">РАДИУС</span>
+                    </div>
+                </div>
+                <div class="card-description">
+                    Стандартная осколочная граната. Наносит урон всем целям в зоне поражения.
+                </div>
+                <div class="card-requirements">
+                    <strong>Эффект:</strong> Наносит 3 урона всем противникам в зоне
+                </div>
+                <div class="card-footer">
+                    <div class="card-cost">Слот: 1</div>
+                    <div class="card-class">Штурмовик</div>
+                </div>
+            </div>
+            
+            <div class="card tactical rarity-common">
+                <div class="card-header">
+                    <div class="card-icon">🔧</div>
+                    <div class="card-title">Замена бронеплиты</div>
+                    <div class="card-type">Ремонт</div>
+                </div>
+                <div class="card-stats">
+                    <div class="stat">
+                        <span class="stat-value">+2</span>
+                        <span class="stat-label">БРОНЯ</span>
+                    </div>
+                </div>
+                <div class="card-description">
+                    Быстрая замена поврежденной бронепластины. Восстанавливает часть защиты.
+                </div>
+                <div class="card-requirements">
+                    <strong>Эффект:</strong> Восстанавливает 2 единицы брони
+                </div>
+                <div class="card-footer">
+                    <div class="card-cost">Слот: 1</div>
+                    <div class="card-class">Все классы</div>
+                </div>
+            </div>
+            
+            <div class="card tactical rarity-epic">
+                <div class="card-header">
+                    <div class="card-icon">🎭</div>
+                    <div class="card-title">Маскировочный костюм</div>
+                    <div class="card-type">Скрытность</div>
+                </div>
+                <div class="card-stats">
+                    <div class="stat">
+                        <span class="stat-value">3</span>
+                        <span class="stat-label">ЗАРЯДЫ</span>
+                    </div>
+                </div>
+                <div class="card-description">
+                    Специальный костюм для маскировки. Позволяет избежать урона от атак.
+                </div>
+                <div class="card-requirements">
+                    <strong>Эффект:</strong> Полностью блокирует следующую атаку (3 заряда)
+                </div>
+                <div class="card-footer">
+                    <div class="card-cost">Слот: 2</div>
+                    <div class="card-class">Снайпер</div>
+                </div>
+            </div>
+
+            <div class="card tactical rarity-rare">
+                <div class="card-header">
+                    <div class="card-icon">💉</div>
+                    <div class="card-title">Адреналин</div>
+                    <div class="card-type">Стимулятор</div>
+                </div>
+                <div class="card-stats">
+                    <div class="stat">
+                        <span class="stat-value">+1</span>
+                        <span class="stat-label">ДЕЙСТВИЕ</span>
+                    </div>
+                </div>
+                <div class="card-description">
+                    Боевой стимулятор. Позволяет совершить дополнительное действие в следующем бою.
+                </div>
+                <div class="card-requirements">
+                    <strong>Эффект:</strong> +1 действие в следующем бою
+                </div>
+                <div class="card-footer">
+                    <div class="card-cost">Слот: 1</div>
+                    <div class="card-class">Все классы</div>
+                </div>
+            </div>
+
+            <div class="card tactical rarity-common">
+                <div class="card-header">
+                    <div class="card-icon">💊</div>
+                    <div class="card-title">Морфий</div>
+                    <div class="card-type">Медицина</div>
+                </div>
+                <div class="card-stats">
+                    <div class="stat">
+                        <span class="stat-value">+1</span>
+                        <span class="stat-label">HP</span>
+                    </div>
+                </div>
+                <div class="card-description">
+                    Обезболивающее средство. Восстанавливает небольшое количество здоровья.
+                </div>
+                <div class="card-requirements">
+                    <strong>Эффект:</strong> Восстанавливает 1 HP вне боя
+                </div>
+                <div class="card-footer">
+                    <div class="card-cost">Слот: 1</div>
+                    <div class="card-class">Все классы</div>
+                </div>
+            </div>
+            
+            <!-- Окружение -->
+            <div class="card environment rarity-common">
+                <div class="card-header">
+                    <div class="card-icon">🏢</div>
+                    <div class="card-title">Укрытие за бетонным блоком</div>
+                    <div class="card-type">Защита</div>
+                </div>
+                <div class="card-stats">
+                    <div class="stat">
+                        <span class="stat-value">Полн.</span>
+                        <span class="stat-label">БЛОКИРОВКА</span>
+                    </div>
+                </div>
+                <div class="card-description">
+                    Надежное укрытие из бетонных блоков. Обеспечивает полную защиту от одной атаки.
+                </div>
+                <div class="card-requirements">
+                    <strong>Эффект:</strong> Полностью блокирует следующую атаку
+                </div>
+                <div class="card-footer">
+                    <div class="card-cost">Одноразовая</div>
+                    <div class="card-class">Все классы</div>
+                </div>
+            </div>
+            
+            <div class="card environment rarity-rare">
+                <div class="card-header">
+                    <div class="card-icon">🌲</div>
+                    <div class="card-title">Лесная засада</div>
+                    <div class="card-type">Атака</div>
+                </div>
+                <div class="card-stats">
+                    <div class="stat">
+                        <span class="stat-value">2</span>
+                        <span class="stat-label">УРОН</span>
+                    </div>
+                </div>
+                <div class="card-description">
+                    Внезапная атака из укрытия. Наносит урон атакующему вас противнику.
+                </div>
+                <div class="card-requirements">
+                    <strong>Эффект:</strong> Наносит 2 урона атакующему в этом раунде
+                </div>
+                <div class="card-footer">
+                    <div class="card-cost">Одноразовая</div>
+                    <div class="card-class">Все классы</div>
+                </div>
+            </div>
+
+            <div class="card environment rarity-common">
+                <div class="card-header">
+                    <div class="card-icon">🚧</div>
+                    <div class="card-title">Колючая проволока</div>
+                    <div class="card-type">Ловушка</div>
+                </div>
+                <div class="card-stats">
+                    <div class="stat">
+                        <span class="stat-value">1</span>
+                        <span class="stat-label">УРОН</span>
+                    </div>
+                </div>
+                <div class="card-description">
+                    Простая, но эффективная ловушка. Наносит урон при попытке перемещения.
+                </div>
+                <div class="card-requirements">
+                    <strong>Эффект:</strong> Наносит 1 урон при перемещении через клетку
+                </div>
+                <div class="card-footer">
+                    <div class="card-cost">Одноразовая</div>
+                    <div class="card-class">Все классы</div>
+                </div>
+            </div>
+        </div>
+        
+        <a href="index.html" class="back-link">← Назад к основному досье</a>
+    </div>
+
+    <script>
+        function filterCards(category) {
+            const cards = document.querySelectorAll('.card');
+            const buttons = document.querySelectorAll('.filter-btn');
+            
+            // Обновляем активную кнопку
+            buttons.forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.textContent.includes(getIconForCategory(category)) || 
+                    (category === 'all' && btn.textContent.includes('Все'))) {
+                    btn.classList.add('active');
+                }
+            });
+            
+            // Показываем/скрываем карточки
+            cards.forEach(card => {
+                if (category === 'all' || card.classList.contains(category)) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        }
+        
+        function getIconForCategory(category) {
+            const icons = {
+                'weapon': '🗡️',
+                'ammo': '💥',
+                'armor': '🛡️',
+                'tactical': '🛠️',
+                'environment': '🌳'
+            };
+            return icons[category] || '';
+        }
+        
+        // Инициализация - показываем все карточки
+        document.addEventListener('DOMContentLoaded', function() {
+            filterCards('all');
+        });
+    </script>
+</body>
+</html>
